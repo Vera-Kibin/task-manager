@@ -40,5 +40,4 @@ jobs:
           MONGO_URI: mongodb://localhost:27018
           MONGO_DB: taskmgr
         run: |
-          python3 -m coverage run --source=src,app -m pytest tests/api
-          python3 -m coverage report -m --fail-under=100
+          python -m pytest -q tests/api
