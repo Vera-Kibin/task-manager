@@ -29,15 +29,15 @@ jobs:
         run: |
           docker compose -f mongo.yml up -d
           # czekamy aż port 27017 zacznie odpowiadać
-          for i in {1..30}; do
+          for i in {1..60}; do
             (echo > /dev/tcp/127.0.0.1/27017) >/dev/null 2>&1 && echo "Mongo ready" && break
             sleep 1
           done
 
-      - name: Run API tests against Mongo with coverage
+      - name: Run API tests (Mongo)
         env:
           STORAGE: mongo
-          MONGO_URI: mongodb://localhost:27018
-          MONGO_DB: taskmgr
+          MONGO_URI: mongodb://localhost:27017
+          MONGO_DB: taskmgr_ci
         run: |
           python -m pytest -q tests/api
