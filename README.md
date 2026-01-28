@@ -47,3 +47,9 @@ python3 -m coverage report -m
 ```
 
 ### 3) Uruchomienie API (dev)
+
+docker compose -f mongo.yml up -d
+export STORAGE=mongo
+export MONGO_URI="mongodb://localhost:27017"
+export MONGO_DB="taskmgr"
+python3 -m flask --app app/api.py --debug run

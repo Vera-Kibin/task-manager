@@ -1,0 +1,44 @@
+name: Test api (Mongo)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Start Mongo
+        run: |
+          docker compose -f mongo.yml up -d
+          # czekamy aż port 27017 zacznie odpowiadać
+          for i in {1..30}; do
+            (echo > /dev/tcp/127.0.0.1/27017) >/dev/null 2>&1 && echo "Mongo ready" && break
+            sleep 1
+          done
+
+      - name: Run API tests against Mongo with coverage
+        env:
+          STORAGE: mongo
+          MONGO_URI: mongodb://localhost:27017
+          MONGO_DB: taskmgr
+        run: |
+          python3 -m coverage run --source=src,app -m pytest tests/api
+          python3 -m coverage report -m --fail-under=100

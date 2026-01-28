@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import asdict
 from datetime import datetime
+import os
 from typing import Optional
 
 from flask import Flask, jsonify, request
@@ -48,14 +49,34 @@ def _actor_id() -> str:
 def create_app() -> Flask:
     app = Flask(__name__)
 
-    users = InMemoryUsers()
-    tasks = InMemoryTasks()
-    events = InMemoryEvents()
+    # users = InMemoryUsers()
+    # tasks = InMemoryTasks()
+    # events = InMemoryEvents()
+    # idgen = IdGenerator()
+    # clock = Clock()
+    # svc = TaskService(users, tasks, events, idgen, clock)
+
+    # # seed kilku userow
+    # users.add(User(id="m1", email="m@example.com", role=Role.MANAGER, status=Status.ACTIVE))
+    # users.add(User(id="u1", email="u1@example.com", role=Role.USER,    status=Status.ACTIVE))
+    # users.add(User(id="u2", email="u2@example.com", role=Role.USER,    status=Status.ACTIVE))
+
+    storage = os.environ.get("STORAGE", "memory").lower()
+    if storage == "mongo":
+        from src.repo.mongo_repo import MongoUsers, MongoTasks, MongoEvents
+        mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
+        mongo_db  = os.environ.get("MONGO_DB", "taskmgr")
+        users  = MongoUsers(uri=mongo_uri, db_name=mongo_db, collection_name="users")
+        tasks  = MongoTasks(uri=mongo_uri, db_name=mongo_db, collection_name="tasks")
+        events = MongoEvents(uri=mongo_uri, db_name=mongo_db, collection_name="events")
+    else:
+        from src.repo.memory_repo import InMemoryUsers, InMemoryTasks, InMemoryEvents
+        users, tasks, events = InMemoryUsers(), InMemoryTasks(), InMemoryEvents()
+
     idgen = IdGenerator()
     clock = Clock()
     svc = TaskService(users, tasks, events, idgen, clock)
-
-    # seed kilku userow
+     # seed kilku userow
     users.add(User(id="m1", email="m@example.com", role=Role.MANAGER, status=Status.ACTIVE))
     users.add(User(id="u1", email="u1@example.com", role=Role.USER,    status=Status.ACTIVE))
     users.add(User(id="u2", email="u2@example.com", role=Role.USER,    status=Status.ACTIVE))
