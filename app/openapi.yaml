@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Task Manager API
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+paths:
+  /api/users:
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/UserCreate" } },
+          }
+      responses:
+        "201": { description: Created }
+        "400": { description: Bad Request }
+  /api/tasks:
+    post:
+      summary: Create task
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/TaskCreate" } },
+          }
+      responses:
+        "201":
+          {
+            description: Created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: "#/components/schemas/Task" } },
+              },
+          }
+    get:
+      summary: List tasks
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [NEW, IN_PROGRESS, DONE, CANCELED] }
+        - in: query
+          name: priority
+          schema: { type: string, enum: [LOW, NORMAL, HIGH] }
+      responses:
+        "200":
+          {
+            description: OK,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      {
+                        type: array,
+                        items: { $ref: "#/components/schemas/Task" },
+                      },
+                  },
+              },
+          }
+  /api/tasks/{taskId}:
+    patch:
+      summary: Update task
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: "#/components/schemas/TaskUpdate" } },
+          }
+      responses:
+        "200": { description: OK }
+    delete:
+      summary: Delete task (soft)
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /api/tasks/{taskId}/assign:
+    post:
+      summary: Assign task
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    properties: { assignee_id: { type: string } },
+                    required: [assignee_id],
+                  },
+              },
+          }
+      responses:
+        "200": { description: OK }
+  /api/tasks/{taskId}/status:
+    post:
+      summary: Change status
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              {
+                schema:
+                  {
+                    type: object,
+                    properties:
+                      {
+                        new_status:
+                          {
+                            type: string,
+                            enum: [NEW, IN_PROGRESS, DONE, CANCELED],
+                          },
+                      },
+                    required: [new_status],
+                  },
+              },
+          }
+      responses:
+        "200": { description: OK }
+  /api/tasks/{taskId}/events:
+    get:
+      summary: Get task events
+      parameters:
+        - in: header
+          name: X-Actor-Id
+          required: true
+          schema: { type: string }
+        - in: path
+          name: taskId
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+
+components:
+  schemas:
+    UserCreate:
+      type: object
+      properties:
+        id: { type: string }
+        email: { type: string, format: email }
+        role: { type: string, enum: [USER, MANAGER] }
+        status: { type: string, enum: [ACTIVE, BLOCKED] }
+      required: [id, email]
+    TaskCreate:
+      type: object
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string }
+        priority: { type: string, enum: [LOW, NORMAL, HIGH], default: NORMAL }
+      required: [title]
+    TaskUpdate:
+      type: object
+      properties:
+        title: { type: string, maxLength: 200 }
+        description: { type: string }
+        priority: { type: string, enum: [LOW, NORMAL, HIGH] }
+    Task:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [NEW, IN_PROGRESS, DONE, CANCELED] }
+        priority: { type: string, enum: [LOW, NORMAL, HIGH] }
+        owner_id: { type: string }
+        assignee_id: { type: [string, "null"] }
+        due_date: { type: [string, "null"], format: date-time }
+        is_deleted: { type: boolean }
