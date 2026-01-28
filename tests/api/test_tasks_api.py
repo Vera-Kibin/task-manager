@@ -2,11 +2,11 @@ import json
 import pytest
 from app.api import create_app
 
-@pytest.fixture
-def client():
-    app = create_app()
-    app.config["TESTING"] = True
-    return app.test_client()
+# @pytest.fixture
+# def client():
+#     app = create_app()
+#     app.config["TESTING"] = True
+#     return app.test_client()
 
 def _headers(actor_id="m1"):
     return {"Content-Type": "application/json", "X-Actor-Id": actor_id}
